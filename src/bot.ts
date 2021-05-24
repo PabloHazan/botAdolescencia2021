@@ -9,4 +9,3 @@ export const launchBot = () => {
     (bot as any).startWebhook('/secret-path', null, process.env.PORT);
     bot.launch();
 }
-
