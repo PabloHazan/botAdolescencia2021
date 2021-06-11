@@ -9,36 +9,31 @@ interface IPlusMultipleValuesState {
 }
 
 export const addPlussMultipleValues = (bot: Telegraf) => createSmartScene<IPlusMultipleValuesState>(
-    {
-        bot,
-        sceneId: 'PLUS_MULTIPLE_VALUES',
-        words: ['Suma varios', 'suma varios', 'Suma muchos', 'suma muchos']
-    },
-    ({sendMessage}) => {
+    bot,
+    ['Suma varios', 'suma varios', 'Suma muchos', 'suma muchos'],
+    ({sendMessage, setState}) => {
+        setState({
+            plus: 0,
+            number: 0,
+            counter: 0,
+            amount: 0,
+        })
         sendMessage('¿Cuántos números queres sumar?');
-        return {
-            state: {
-                plus: 0,
-                number: 0,
-                counter: 0,
-                amount: 0,
-            },
-            after: 'next',
-        }
+        return 'next';
     },
     ({state, sendMessage, getNumberFromMessage }) => {
         try {
             state.amount = getNumberFromMessage();
             if(state.amount < 2) {
                 sendMessage('Mmm... necesito que por lo menos sea un 2');
-                return { state };
+                return;
             }
         } catch (error) {
             sendMessage('Eso no es un número... ¿Y si mejor probas de nuevo?');
-            return { state }
+            return;
         }
         sendMessage(`¡Genial! Empeza a mandarme los ${state.amount} números`);
-        return { state, after: 'next' };
+        return 'next';
     },
     ({ state, sendMessage ,getNumberFromMessage }) => {
         try {
@@ -47,13 +42,13 @@ export const addPlussMultipleValues = (bot: Telegraf) => createSmartScene<IPlusM
             state.counter ++;
             if (state.counter < state.amount) {
                 sendMessage('¡Otro!');
-                return { state }
+                return;
             };
             sendMessage(`Bueno che, la suma total es ${state.plus}`);
-            return { state, after: 'leave' };
+            return 'leave';
         } catch (error) {
             sendMessage('Eso no es un número...');
-            return { state };
+            return;
         }
     }
 );

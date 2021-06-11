@@ -15,19 +15,6 @@ const createScene = (bot: Telegraf, sceneId: string, words: Array<string>, ...st
 
 type AfterStepType = 'next' | 'leave' | 'repeat';
 
-interface OptionalStepDefinitionReturns {
-    after?: AfterStepType,
-}
-
-interface StepDefinitionReturns<StateType> extends OptionalStepDefinitionReturns {
-    state: StateType;
-    
-}
-
-const optionalStepDefinitionReturns: OptionalStepDefinitionReturns = { 
-    after: 'repeat',
-}
-
 interface StepDefinitionParams<StateType> {
     sendMessage: (message: string | number) => void;
     getTextFromMessage: () => string;
@@ -36,7 +23,7 @@ interface StepDefinitionParams<StateType> {
     setState: (newState: StateType) => void
 }
 
-export type StepDefinition<StateType> = (params: StepDefinitionParams<StateType>) => Promise<StepDefinitionReturns<StateType>> | StepDefinitionReturns<StateType>;
+export type StepDefinition<StateType> = (params: StepDefinitionParams<StateType>) => Promise<AfterStepType> | AfterStepType | void;
 
 const getStepDefinitionParamsFromContext = <StateType>(context: Scenes.WizardContext<Scenes.WizardSessionData>): StepDefinitionParams<StateType> =>  ({
     sendMessage: (message: string | number) => context.reply(String(message)),
@@ -50,31 +37,24 @@ const createStep: <StateType>(definition: StepDefinition<StateType>) => Middlewa
     <StateType>(definition: StepDefinition<StateType>):  Middleware<Scenes.WizardContext> => {
         return async (context:  WizardContext<WizardSessionData>) => {
             const params: StepDefinitionParams<StateType> = getStepDefinitionParamsFromContext<StateType>(context);
-            const { state, after } = { ...optionalStepDefinitionReturns, ...await definition(params) };
-            setSessionState<StateType>(context, state);
-            switch (after) {
-                case 'repeat': return;
-                case 'next': return context.wizard.next();
-                case 'leave': context.scene.leave();
+            try {
+                const after = await definition(params) ?? 'repeat';
+                switch (after) {
+                    case 'repeat': return;
+                    case 'next': return context.wizard.next();
+                    case 'leave': context.scene.leave();
+                }
+            } catch (error) {
+                context.reply('Ups... Con eso me mataste, perdon');
             }
         }
     }
 
-
-interface SmartSceneConfig {
-    bot: Telegraf;
-    sceneId: string;
-    words: Array<string>;
-}
-
 export const createSmartScene = <StateType = undefined>(
-    {
-        bot,
-        sceneId,
-        words,
-    }: SmartSceneConfig,
+    bot: Telegraf,
+    words: Array<string>,
     ...steps: Array<StepDefinition<StateType>>
 ) => {
     const sceneSteps = steps.map(createStep);
-    return createScene(bot, sceneId, words, ...sceneSteps)
+    return createScene(bot, Buffer.from(words.join('|')).toString('base64'), words, ...sceneSteps)
 }

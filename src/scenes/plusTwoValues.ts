@@ -7,29 +7,24 @@ interface IPlusTwoValuesState {
 }
 
 export const addPlussTowValues = (bot: Telegraf) => createSmartScene<IPlusTwoValuesState>(
-    {
-        bot,
-        sceneId: 'PLUS_TWO_VALUES',
-        words: ['Suma', 'suma'],
-    },
-    ({sendMessage}) => {
+    bot,
+    ['Suma', 'suma'],
+    ({sendMessage, setState}) => {
         sendMessage('Ingresa el primer número');
-        return {
-            state: {
-                firstNumber: 0,
-                secondNumber: 0,
-            },
-            after: 'next',
-        };
+        setState({
+            firstNumber: 0,
+            secondNumber: 0,
+        });
+        return 'next';
     },
     ({ state, sendMessage, getNumberFromMessage }) => {
         state.firstNumber = getNumberFromMessage();
         sendMessage('Ingresa el segundo número');
-        return { state, after: 'next' };
+        return 'next';
     },
     ({ state, sendMessage, getNumberFromMessage }) => {
         state.secondNumber = getNumberFromMessage();
         sendMessage(state.firstNumber + state.secondNumber);
-        return { state, after: 'leave' };
+        return 'leave';
     }
 );
