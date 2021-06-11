@@ -9,7 +9,7 @@ export const readNumber = (context: Scenes.WizardContext<Scenes.WizardSessionDat
     return value;
 }
 
-export const initSessionState: <StateType>(context: Scenes.WizardContext<Scenes.WizardSessionData>, initialState: StateType) => void = 
+export const setSessionState: <StateType>(context: Scenes.WizardContext<Scenes.WizardSessionData>, initialState: StateType) => void = 
     <StateType>(context: Scenes.WizardContext<Scenes.WizardSessionData>, initialState: StateType) => {
         for (const key in initialState) (context.wizard.state as any)[key] = initialState[key];
 }
