@@ -13,7 +13,7 @@ const createScene = (bot: Telegraf, sceneId: string, words: Array<string>, ...st
     bot.hears(words, Scenes.Stage.enter<any>(sceneId));
 }
 
-type AfterStepType = 'next' | 'leave' | 'repeat';
+type AfterStepType = 'next' | 'end' | 'repeat';
 
 interface StepDefinitionParams<StateType> {
     sendMessage: (message: string | number) => void;
@@ -33,16 +33,16 @@ const getStepDefinitionParamsFromContext = <StateType>(context: Scenes.WizardCon
     setState: (newState: StateType) => setSessionState<StateType>(context, newState),
 })
 
-const createStep: <StateType>(definition: StepDefinition<StateType>) => Middleware<Scenes.WizardContext> = 
-    <StateType>(definition: StepDefinition<StateType>):  Middleware<Scenes.WizardContext> => {
+const createStep: <StateType>(definition: StepDefinition<StateType>, defaultAfter: AfterStepType) => Middleware<Scenes.WizardContext> = 
+    <StateType>(definition: StepDefinition<StateType>, defaultAfter: AfterStepType):  Middleware<Scenes.WizardContext> => {
         return async (context:  WizardContext<WizardSessionData>) => {
             const params: StepDefinitionParams<StateType> = getStepDefinitionParamsFromContext<StateType>(context);
             try {
-                const after = await definition(params) ?? 'repeat';
+                const after = await definition(params) ?? defaultAfter;
                 switch (after) {
                     case 'repeat': return;
                     case 'next': return context.wizard.next();
-                    case 'leave': context.scene.leave();
+                    case 'end': context.scene.leave();
                 }
             } catch (error) {
                 context.reply('Ups... Con eso me mataste, perdon');
@@ -55,6 +55,6 @@ export const createSmartScene = <StateType = undefined>(
     words: Array<string>,
     ...steps: Array<StepDefinition<StateType>>
 ) => {
-    const sceneSteps = steps.map(createStep);
+    const sceneSteps = steps.map((step, index) => createStep(step, index + 1 === steps.length ? 'end' : 'next'));
     return createScene(bot, Buffer.from(words.join('|')).toString('base64'), words, ...sceneSteps)
 }

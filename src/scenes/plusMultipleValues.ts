@@ -19,21 +19,21 @@ export const addPlussMultipleValues = (bot: Telegraf) => createSmartScene<IPlusM
             amount: 0,
         })
         sendMessage('¿Cuántos números queres sumar?');
-        return 'next';
+        return;
     },
     ({state, sendMessage, getNumberFromMessage }) => {
         try {
             state.amount = getNumberFromMessage();
             if(state.amount < 2) {
                 sendMessage('Mmm... necesito que por lo menos sea un 2');
-                return;
+                return 'repeat';
             }
         } catch (error) {
             sendMessage('Eso no es un número... ¿Y si mejor probas de nuevo?');
-            return;
+            return 'repeat';
         }
         sendMessage(`¡Genial! Empeza a mandarme los ${state.amount} números`);
-        return 'next';
+        return;
     },
     ({ state, sendMessage ,getNumberFromMessage }) => {
         try {
@@ -42,13 +42,13 @@ export const addPlussMultipleValues = (bot: Telegraf) => createSmartScene<IPlusM
             state.counter ++;
             if (state.counter < state.amount) {
                 sendMessage('¡Otro!');
-                return;
+                return 'repeat';
             };
             sendMessage(`Bueno che, la suma total es ${state.plus}`);
-            return 'leave';
+            return;
         } catch (error) {
             sendMessage('Eso no es un número...');
-            return;
+            return 'repeat';
         }
-    }
+    },
 );

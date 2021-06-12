@@ -15,16 +15,16 @@ export const addPlussTowValues = (bot: Telegraf) => createSmartScene<IPlusTwoVal
             firstNumber: 0,
             secondNumber: 0,
         });
-        return 'next';
+        return;
     },
     ({ state, sendMessage, getNumberFromMessage }) => {
         state.firstNumber = getNumberFromMessage();
         sendMessage('Ingresa el segundo número');
-        return 'next';
+        return;
     },
     ({ state, sendMessage, getNumberFromMessage }) => {
         state.secondNumber = getNumberFromMessage();
         sendMessage(state.firstNumber + state.secondNumber);
-        return 'leave';
+        return;
     }
 );
