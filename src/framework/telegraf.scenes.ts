@@ -2,12 +2,12 @@ import { Middleware, Scenes, Telegraf } from "telegraf";
 import { WizardContext, WizardSessionData } from "telegraf/typings/scenes";
 import { getSessionState, getTextMessage, readNumber, setSessionState } from "./telegraf.utils";
 
-const createScene = (bot: Telegraf, sceneId: string, words: Array<string>, ...steps: Array<Middleware<Scenes.WizardContext>>) => {
+const createScene = (bot: Telegraf, sceneId: string, words: Array<string | RegExp>, ...steps: Array<Middleware<Scenes.WizardContext>>) => {
     const scene: Scenes.WizardScene<Scenes.WizardContext> = new Scenes.WizardScene<Scenes.WizardContext>(sceneId, ...steps);
     const stage = new Scenes.Stage([scene], { });
-    stage.command(['Basta', 'basta'], (ctx) => {
+    stage.command(['Basta', 'basta'], async (ctx) => {
         ctx.reply('¡Dale! Dejamos acá');
-        return ctx.scene.leave();
+        return await ctx.scene.leave();
     });
     bot.use(stage.middleware() as any);
     bot.hears(words, Scenes.Stage.enter<any>(sceneId));
@@ -23,7 +23,7 @@ interface StepDefinitionParams<StateType> {
     setState: (newState: StateType) => void
 }
 
-export type StepDefinition<StateType> = (params: StepDefinitionParams<StateType>) => Promise<AfterStepType> | AfterStepType | void;
+export type StepDefinition<StateType> = (params: StepDefinitionParams<StateType>) => Promise<AfterStepType | void> | AfterStepType | void;
 
 const getStepDefinitionParamsFromContext = <StateType>(context: Scenes.WizardContext<Scenes.WizardSessionData>): StepDefinitionParams<StateType> =>  ({
     sendMessage: (message: string | number) => context.reply(String(message)),
@@ -46,13 +46,14 @@ const createStep: <StateType>(definition: StepDefinition<StateType>, defaultAfte
                 }
             } catch (error) {
                 context.reply('Ups... Con eso me mataste, perdon');
+                context.scene.leave();
             }
         }
     }
 
 export const createSmartScene = <StateType = undefined>(
     bot: Telegraf,
-    words: Array<string>,
+    words: Array<string | RegExp>,
     ...steps: Array<StepDefinition<StateType>>
 ) => {
     const sceneSteps = steps.map((step, index) => createStep(step, index + 1 === steps.length ? 'end' : 'next'));
